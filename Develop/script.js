@@ -1,23 +1,96 @@
+const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17];
+
 // Wrap all code that interacts with the DOM in a call to jQuery to ensure that
 // the code isn't run until the browser has finished rendering all the elements
 // in the html.
 $(function () {
-  // TODO: Add a listener for click events on the save button. This code should
-  // use the id in the containing time-block as a key to save the user input in
-  // local storage. HINT: What does `this` reference in the click listener
-  // function? How can DOM traversal be used to get the "hour-x" id of the
-  // time-block containing the button that was clicked? How might the id be
-  // useful when saving the description in local storage?
-  //
-  // TODO: Add code to apply the past, present, or future class to each time
-  // block by comparing the id to the current hour. HINTS: How can the id
-  // attribute of each time-block be used to conditionally add or remove the
-  // past, present, and future classes? How can Day.js be used to get the
-  // current hour in 24-hour time?
-  //
-  // TODO: Add code to get any user input that was saved in localStorage and set
-  // the values of the corresponding textarea elements. HINT: How can the id
-  // attribute of each time-block be used to do this?
-  //
-  // TODO: Add code to display the current date in the header of the page.
+  displayCurrentDay();
+
+  addTimeClasses();
+
+  $('.saveBtn').click(handleSaveButtonClick);
+
+  displayEvents();
 });
+
+// Add code to apply the past, present, or future class to each time
+// block by comparing the id to the current hour.
+function addTimeClasses() {
+  const now = dayjs();
+
+  for (let i = 0; i < hours.length; i++) {
+    const hour = hours[i];
+
+    const element = $('#hour-' + hour);
+
+    const dateWithHour = dayjs().hour(hour);
+
+    if (dateWithHour.isSame(now, 'hour')) {
+      element.addClass('present');
+    } else if (dateWithHour.isBefore(now)) {
+      element.addClass('past');
+    } else {
+      element.addClass('future');
+    }
+  }
+}
+
+function displayCurrentDay() {
+  const now = dayjs();
+
+  const currentDayElement = $('#currentDay');
+
+  currentDayElement.text(now.format('MMMM D, YYYY'));
+}
+
+function handleSaveButtonClick(event) {
+  const buttonElement = this;
+
+  const row = $(buttonElement).closest('.time-block');
+
+  // Get the user input
+  const textArea = row.find('.description');
+  const eventDescription = textArea.val();
+
+  // Get the hour
+  const rowId = row.attr('id');
+  const hour = rowId.replace('hour-', '');
+
+  // Save user input and date and hour to local storage
+  saveEventToLocalStorage(hour, eventDescription);
+}
+
+function saveEventToLocalStorage(hour, eventDescription) {
+  const dateWithHour = dayjs().hour(hour);
+  const key = dateWithHour.format('DD/MM/YYYY H');
+  localStorage.setItem(key, eventDescription);
+}
+
+function displayEvents() {
+  // For every hour
+  for (let i = 0; i < hours.length; i++) {
+    const hour = hours[i];
+    // 	Get event for hour from local storage
+    const eventDescription = getEventFromLocalStorage(hour);
+
+    // If there is an event for the hour
+    if (eventDescription !== null) {
+      // Update the corresponding text area with the event description:
+      // Get text area element
+      const timeBlockId = 'hour-' + hour;
+      const timeBlockElement = $('#' + timeBlockId);
+      const textArea = timeBlockElement.find('.description');
+
+      // 	Set the 'value' attribute of the text area element to the event description
+      textArea.val(eventDescription);
+    }
+  }
+}
+
+function getEventFromLocalStorage(hour) {
+  const dateWithHour = dayjs().hour(hour);
+  const key = dateWithHour.format('DD/MM/YYYY H');
+  const value = localStorage.getItem(key);
+
+  return value;
+}
